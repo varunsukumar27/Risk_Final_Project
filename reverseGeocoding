@@ -1,0 +1,28 @@
+new <- read.csv("zipcode.csv", header = TRUE, stringsAsFactors = FALSE)
+reverseGeoCode <- function(latlng) {
+  latlngStr <-  gsub(" ","%20", paste(latlng, collapse=","))#Collapse and Encode URL Parameters
+  library("RJSONIO") #Load Library
+  #Open Connection
+  connectStr <- paste("http://maps.google.com/maps/api/geocode/json?sensor=false&latlng=",latlngStr, sep="")
+  con <- url(connectStr)
+  data.json <- fromJSON(paste(readLines(con), collapse=""))
+  close(con)
+  #Flatten the received JSON
+  data.json <- unlist(data.json)
+  if(data.json["status"]=="OK"){
+    address <- data.json["results.formatted_address"]}
+  return (address)
+}
+
+train$address <- NA
+for(i in 1:nrow(train)){
+  if(is.na(train$zipcode[i])){
+  train$address[i] <- reverseGeoCode(c(train$j[i], train$k[i]))
+  print(c(i,train$address[i]))
+  }
+}
+
+
+write.csv(train,file = 'zipcode_varun.csv',row.names = FALSE)
+table(train)
+unique(train$zipcode)
