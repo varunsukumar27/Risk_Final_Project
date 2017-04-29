@@ -1,0 +1,328 @@
+final <- read.csv("final2014.csv", header = TRUE, stringsAsFactors = FALSE)
+train_size <- floor(.80 * nrow(final))
+train_index <- sample(1:nrow(final),size = train_size)
+train <- final[train_index,]
+test <- final[-train_index,]
+library(rpart)
+
+library(caret)
+library(ggplot2)
+install.packages("plyr")
+library(plyr)
+train_control <- trainControl(method="cv", number=1)
+bart_model <- train(Taxis~.,data = train, trControl=train_control, method="bartMachine")
+print(model)
+model_mars <- train(Taxis~.,data = train, trControl=train_control, method="earth")
+print(model_mars)
+model_rf <- train(Taxis~.,data = train, trControl=train_control, method="rf")
+print(model_mars)
+library(randomForest)
+rfmodel <- rfcv(train,train$Taxis,cv.fold = 1, mtry = function(p)max(3))
+rfpredict1 <- predict(rf_train_model, train)
+rfpredict2 <- predict(rf_train_model, test)
+jpeg(filename = "rf1.jpg")
+plot(rfpredict1~train$Taxi, xlab = "Fit", ylab = "Actual", col = "red")
+abline(a=0,b=1)
+jpeg(filename = "rf2.jpg")
+plot(rfpredict2~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+abline(a=0,b=1)
+final <- read.csv("final2014.csv", header = TRUE, stringsAsFactors = FALSE)
+train_size <- floor(.06 * nrow(final))
+train_index <- sample(1:nrow(final),size = train_size)
+train <- final[train_index,]
+test <- final[-train_index,]
+rf_model<- randomForest(Taxis~., data = train)
+r2_rf <- 1 - sum((test$Taxis-rfpredict2)^2)/sum((test$Taxis - mean(test$Taxis))^2); r2_rf
+
+final <- read.csv('final2014.csv', header = TRUE)
+d <- final
+train_size <- floor(.01 * nrow(d))
+train_index <- sample(1:nrow(d),size = train_size)
+r <- d[train_index,]
+train_size <- floor(.85 * nrow(r))
+train_index <- sample(1:nrow(r),size = train_size)
+train <- r[train_index,]
+test <- r[-train_index,]
+bart1 <- bartMachine(train[2:9], train$Taxis, num_trees = 20)
+bart_fit <- predict(bart1,train[2:9])
+bart_predicted <- predict(bart1, test[2:9])
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- lm_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+library(ggplot2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- bart_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- bart_predicted
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+rf_fit <- predict(rf_train_model, train)
+rf_pre <- predict(rf_train_model, test)
+
+sqrt(sum((train$Taxis - rf_fit)^2)/nrow(train))
+1 - sum((train$Taxis-rf_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - rf_pre)^2)/nrow(test))
+1 - sum((test$Taxis-rf_pre)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+pred <- predict(fit.rf,test)
+sqrt(sum((test$Taxis - pred)^2)/nrow(test))
+1 - sum((test$Taxis-pred)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+options(java.pparameters="-Xmx3000m")
+set_bart_machine_num_cores(4)
+library(bartMachine)
+
+#Linear Model
+lm_model <- train(log10(Taxis)~.,data = train, trControl=train_control, method="lm")
+lm_fit <- predict(lm_model, train)
+lm_predict <- predict(lm_model, test)
+
+
+mean((train$Taxis - lm_fit)^2)^0.5
+1 - sum((train$Taxis-lm_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - lm_predict)^2)/nrow(test))
+1 - sum((test$Taxis-lm_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- lm_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- lm_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+#Mars Model
+lm_model <- train(log10(Taxis)~.,data = train, trControl=train_control, method="lm")
+mars_fit <- predict(model_mars, train)
+mars_predict <- predict(model_mars, test)
+
+
+mean((train$Taxis - mars_fit)^2)^0.5
+1 - sum((train$Taxis-mars_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - mars_predict)^2)/nrow(test))
+1 - sum((test$Taxis-mars_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- mars_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- mars_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+#SVM Model
+library(e1071)
+
+svm_model <- svm(Taxis~.,data = train, kernel = "rad")
+svm_fit <- predict(svm_model, train)
+svm_predict <- predict(svm_model, test)
+
+svm1_model <- svm(Taxis~.,data = train)
+svm1_fit <- predict(svm1_model, train)
+svm1_predict <- predict(svm1_model, test)
+
+mean((train$Taxis - svm_fit)^2)^0.5
+1 - sum((train$Taxis-svm_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - svm_predict)^2)/nrow(test))
+1 - sum((test$Taxis-svm_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- svm_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- svm_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+
+#RF Model
+
+
+
+rf_fit <- predict(rf_train_model, train)
+rf_predict <- predict(rf_train_model, test)
+
+mean((train$Taxis - rf_fit)^2)^0.5
+1 - sum((train$Taxis-rf_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - rf_predict)^2)/nrow(test))
+1 - sum((test$Taxis-rf_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- rf_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- rf_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+#Boosted Trees Model
+library(xgboost)
+?xgboost
+xgb_model <- xgboost(data = data.matrix(scale(train[2:9])), label = data.matrix(train$Taxis), eta = 0.1, max_depth = 15, nrounds = 25)
+bt_model <- train(Taxis~.,data = train, trControl=train_control, method="blackboost")
+
+xg_fit <- predict(xgb_model, data.matrix(scale(train)))
+xg_predict <- predict(xgb_model, data.matrix(scale(test)))
+
+sqrt(sum((scale(train$Taxis) - xg_fit)^2)/nrow(train))
+1 - sum((train$Taxis-xg_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - xg_predict)^2)/nrow(test))
+1 - sum((test$Taxis-xg_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- rf_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- rf_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+
+maxs <- apply(train, 2, max) 
+mins <- apply(train, 2, min)
+train <- as.data.frame(scale(train, center = mins, scale = maxs - mins))
+maxs1 <- apply(test, 2, max) 
+mins1 <- apply(test, 2, min)
+test <- as.data.frame(scale(test, center = mins, scale = maxs - mins))
+
+install.packages("neuralnet")
+library(neuralnet)
+n <- names(train)
+f <- as.formula(paste("Taxis ~", paste(n[!n %in% "Taxis"], collapse = " + ")))
+nn <- neuralnet(f,data=train,hidden=c(4,2),linear.output=T)
+
+
+#BART
+bart_model <- svm(Taxis~.,data = train)
+bart_fit <- predict(bart1, train)
+bart_predict <- predict(bart1, test)
+
+mean((train$Taxis - svm_fit)^2)^0.5
+1 - sum((train$Taxis-svm_fit)^2)/sum((train$Taxis-mean(train$Taxis))^2)
+sqrt(sum((test$Taxis - svm_predict)^2)/nrow(test))
+1 - sum((test$Taxis-svm_predict)^2)/sum((test$Taxis-mean(test$Taxis))^2)
+
+output1 <- matrix(0,nrow(train),2)
+output1[,1] <- train$Taxis
+output1[,2] <- svm_fit
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Fitted values") +
+  xlab("Fitted values")+
+  ylab("Actual values")
+
+output1 <- matrix(0,nrow(test),2)
+output1[,1] <- test$Taxis
+output1[,2] <- svm_predict
+output1 <- as.data.frame(output1)
+plot(lm_predict~test$Taxi, xlab = "Predicted", ylab = "Actual", col = "red")
+ggplot(data= output1, aes(y = output1[,1]))+
+  geom_point(aes(x = output1[,2], colour = 'red'), size =2) +
+  ggtitle("Actual vs. Predicted values") +
+  xlab("Predicted values")+
+  ylab("Actual values")
+
+
+
+library(MASS)
+wilcox.test(train$Taxis,train$Zipcode, paired = FALSE)
+varImpPlot(fit.rf)
+rf <- randomForest(train$Taxis~., data = train)
