@@ -1,0 +1,65 @@
+library('ggplot2')
+library('forecast')
+library('tseries')
+
+df1 = read.csv("finalpickupdemand.csv",header = T )
+df1 = df1[ ,c(1,7)]#taking the required variables
+
+df2 = aggregate(df1['id'], by=df1['Date'], sum)#converting hourly to daily 
+df2$Date = as.Date(df2$Date)
+
+#plotting raw data
+ggplot(df2, aes(Date, id)) + geom_line() + scale_x_date('month')  + ylab("Daily cab demand ") +
+    xlab("")
+#coverting the demand to timeseries object to pass it to tsclean()
+count_ts1 = ts(df2[, c('id')])
+df2$clean_cnt = tsclean(count_ts1)#cleaning for any outliers
+ggplot() +
+    geom_line(data = df2, aes(x = Date, y = clean_cnt)) + ylab('Cleaned taxi Count')+ xlab('months')
+
+
+df2$cnt_ma = ma(df2$clean_cnt, order=7, centre = TRUE) # using the clean count with no outliers to plot the summary sttaistic(weekly)
+df2$cnt_ma30 = ma(df2$clean_cnt, order=30, centre = TRUE)#using the clean count with no outliers to plot the summary sttaistic(daily)
+ggplot() +
+    geom_line(data = df2, aes(x = Date, y = clean_cnt, colour = "Counts")) +
+    geom_line(data = df2, aes(x = Date, y = cnt_ma,   colour = "Weekly Moving Average"))  +
+    geom_line(data = df2, aes(x = Date, y = cnt_ma30, colour = "Monthly Moving Average"))  +
+    ylab('demand') + xlab('months')
+count_ma = ts(na.omit(df2$cnt_ma), frequency=30)
+#decomposing teh data
+decomp = stl(count_ma, s.window="periodic")
+deseasonal_cnt <- seasadj(decomp)
+plot(decomp)
+#doing stationary test
+adf.test(count_ma, alternative = "stationary")
+Acf(count_ma, main='',2*60)
+Pacf(count_ma, main='')
+count_d1 = diff(deseasonal_cnt, differences = 1) #taking difference of order 1
+plot(count_d1)
+adf.test(count_d1, alternative = "stationary")
+Acf(count_d1, main='ACF for Differenced Series')
+Pacf(count_d1, main='PACF for Differenced Series')
+
+#Auto.arima()
+fit<-auto.arima(deseasonal_cnt, seasonal=FALSE)
+tsdisplay(residuals(fit), lag.max=45, main=' Model Residuals')
+
+# ARIMA WAS FITTED FOR LESS ORDERS.THOUGH THE AIC VALUE OBTAINED WAS LESS IT WAS NOT A BIG DIFFERENCE(7050-6996)
+# fit2 = arima(deseasonal_cnt, order=c(5,1,6))
+# tsdisplay(residuals(fit2), lag.max=45, main=' Model Residuals')
+
+fcast <- forecast(fit, h=30)#for plots h=60 has been taken just to widen teh window
+plot(fcast)
+
+#holding out some data for testing
+hold <- window(ts(deseasonal_cnt), start=335)
+fit_no_holdout = arima(ts(deseasonal_cnt[-c(335:365)]), order=c(5,1,2))
+
+fcast_no_holdout <- forecast(fit_no_holdout,h=30)
+plot(fcast_no_holdout, main=" ")
+lines(ts(deseasonal_cnt))
+
+#fitting now with seasonality
+fit_w_seasonality = auto.arima(deseasonal_cnt, seasonal=TRUE)
+seas_fcast <- forecast(fit_w_seasonality, h=30)
+plot(seas_fcast)
