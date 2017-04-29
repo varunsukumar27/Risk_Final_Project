@@ -1,0 +1,76 @@
+library('lubridate')
+library('stringr')
+library('dplyr')
+library('plyr')
+
+data <- read.csv("yellow_tripdata_2015-01.csv")
+d <- data[,-c(1,8,9,12,14,15,16,17,18)]
+
+#converting date and time
+d$tpep_pickup_datetime <- as.character(d$tpep_pickup_datetime)
+d$dtpep_ropoff_datetime <- as.character(d$tpep_dropoff_datetime)
+df  <- str_split_fixed(d$tpep_pickup_datetime, " ", 2)
+df <- as.data.frame(df)
+df1  <- str_split_fixed(d$tpep_dropoff_datetime, " ", 2)
+df1 <- as.data.frame(df1)
+df$V1 <- as.character(df$V1)
+df1$V1 <- as.character(df1$V1)
+df1$V1 <- ymd(df1$V1)
+df$V1 <- ymd(df$V1)
+df$V2 <- hms(df$V2)
+df1$V2 <- hms(df1$V2)
+colnames(df) <- c("pickup_date","Pickup_time")
+colnames(df1) <- c("dropoff_date","dropoff_time")
+f <- d[,-c(1,2)]
+
+x <- cbind(df,f[,c(1,2,3,4,7)])
+y <- cbind(df,f[,c(1,2,5,6,7)])
+
+write.csv(x, file = 'pickup_rawdata_2015_1.csv',row.names = FALSE)
+write.csv(y,file = 'dropoff_rawdata_2015_1.csv',row.names = FALSE)
+
+df$Pickup_hour <- hour(df$Pickup_time)
+df1$dropoff_hour <- hour(df1$dropoff_time)
+g <- cbind(df,df1,f)
+
+#truncating Long and Lat
+g$pickup_longitude <- trunc(g$pickup_longitude*10^3)/10^3
+g$pickup_latitude <- trunc(g$pickup_latitude*10^3)/10^3
+g$dropoff_longitude <- trunc(g$dropoff_longitude*10^3)/10^3
+g$dropoff_latitude <- trunc(g$dropoff_latitude*10^3)/10^3
+
+#write.csv(g, file = 'processed_taxi4.csv',row.names = FALSE)
+
+#Proceessing pickup demand
+new <- read.csv('zipcode_ny_nj.csv')
+yellow <- g[,c(1,3,7,8,9,10,13)]
+yellow <- cbind(yellow,id = 1)
+yellow <- yellow[complete.cases(yellow),] 
+#yellow$month <- month(yellow$pickup_date)
+a <- data.frame()
+
+yellow$pickup_coordinates <- paste(yellow$pickup_longitude,yellow$pickup_latitude,sep=",")
+new$pickup_coordinates <- paste(new$k,new$j,sep=",")
+yellow$zipcode <- new[match(yellow$pickup_coordinates,new$pickup_coordinates),4]
+
+yellow$pickup_coordinates <- NULL
+yellow$pickup_longitude <- NULL
+yellow$pickup_latitude <- NULL
+q <- aggregate(cbind(passenger_count,trip_distance,fare_amount,id)~pickup_date+Pickup_hour+zipcode,data = yellow,sum)
+
+#processing dropoff demand
+green <- g[,c(4,5,6,7,8,11,12,13)]
+green <- cbind(green, id = 1)
+green <- green[complete.cases(green),]
+
+green$dropoff_coordinates <- paste(green$dropoff_longitude,green$dropoff_latitude,sep=",")
+new$pickup_coordinates <- paste(new$k,new$j,sep=",")
+green$zipcode <- new[match(green$dropoff_coordinates,new$pickup_coordinates),4]
+
+green$dropoff_coordinates <- NULL
+green$dropoff_longitude <- NULL
+green$dropoff_latitude <- NULL
+p <- aggregate(cbind(passenger_count,trip_distance,fare_amount,id)~dropoff_date+dropoff_hour+zipcode,data = green,sum)
+
+write.csv(q,"taxi_pickup_2015_1.csv",row.names = FALSE)
+write.csv(p,"taxi_dropoff_2015_1.csv",row.names = FALSE)
